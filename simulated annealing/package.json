@@ -1,0 +1,8 @@
+{
+  "name": "simulated-annealing",
+  "version": "0.0.1",
+  "description": "First homework for IntSys course.",
+  "main": "index.js",
+  "author": "Mihajlo Ilijic",
+  "license": "MIT"
+}
