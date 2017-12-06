@@ -1,12 +1,16 @@
 interface TimeTableElement {
   professor: string,
   subject: string,
-  // room: string,
 }
 
-const totalRooms = 4
+interface ScheduleOptions {
+  noRooms: number,
+  noTerms: number,
+}
+
+const totalRooms = 5
 const totalProfessors = 10
-const maxPotentialClasses = 6
+const maxPotentialClasses = 4
 
 /*
  * Initialize all elements for a university.
@@ -23,14 +27,25 @@ function initializeUniversity(noProfessors: number, noRooms: number, maxClass: n
 
   for (let i = 0; i < noProfessors; i++) {
     const professor = `Dr. prof. ${i}`
-    const noClasses = (Math.floor(Math.random() * 10) % maxClass) + 1 // no more than 5 classes
+    const noClasses = (Math.floor(Math.random() * 10) % maxClass) + 1 // no more than `maxClass` unique classes
 
     for (let j = 0; j < noClasses; j++) {
+      // every class can occure twice
       result.push({
         professor,
         subject: `${j}0${i}`,
-        // room: rooms[j % noRooms],
       })
+      result.push({
+        professor,
+        subject: `${j}0${i}`,
+      })
+      if (Math.random() >= 0.5) {
+        // some can occure even trice
+        result.push({
+          professor,
+          subject: `${j}0${i}`,
+        })
+      }
     }
   }
 
@@ -43,12 +58,13 @@ function initializeUniversity(noProfessors: number, noRooms: number, maxClass: n
  * Second dimension is term-indexed.
  * Third dimension is room-indexed.
  */
-function initializeState(university: TimeTableElement[], noRooms: number): TimeTableElement[][][] {
+function initializeState(university: TimeTableElement[], opts: ScheduleOptions): TimeTableElement[][][] {
+  const noDays = 5
   const timeTable: TimeTableElement[][][] = []
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < noDays; i++) {
     timeTable.push([])
-    for (let j = 0; j < 3; j++) {
+    for (let j = 0; j < opts.noTerms; j++) {
       timeTable[i].push([])
     }
   }
@@ -62,9 +78,9 @@ function initializeState(university: TimeTableElement[], noRooms: number): TimeT
     let term: number
     let roomNumber: number
     do {
-      day = Math.floor(Math.random() * 10) % 5
-      term = Math.floor(Math.random() * 10) % 3
-      roomNumber = Math.floor(Math.random() * 10) % noRooms
+      day = Math.floor(Math.random() * 10) % noDays
+      term = Math.floor(Math.random() * 10) % opts.noTerms
+      roomNumber = Math.floor(Math.random() * 10) % opts.noRooms
     } while (timeTable[day][term][roomNumber] != null)
 
     timeTable[day][term][roomNumber] = newEntry
@@ -77,7 +93,7 @@ const uni = initializeUniversity(totalProfessors, totalRooms, maxPotentialClasse
 console.log(uni.length)
 uni.forEach(element => console.log(`${element.professor} is teaching ${element.subject}`))
 
-const initState = initializeState(uni, totalRooms)
+const initState = initializeState(uni, { noRooms: totalRooms, noTerms: 6 })
 console.log('---')
 initState.forEach((day, i) => {
   console.log(`Day ${i}`)
