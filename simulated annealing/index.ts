@@ -1,3 +1,5 @@
+import uniqBy = require('lodash.uniqby')
+
 interface TimeTableElement {
   professor: string,
   subject: string,
@@ -12,10 +14,12 @@ const totalRooms = 5
 const totalProfessors = 10
 const maxPotentialClasses = 4
 
-/*
+/**
  * Initialize all elements for a university.
- * An element consists of professor, the subject his teaching and the room where the subject is thought.
- * Each element will afterwards be inserted into randomly selected term of the timetable.
+ * @param  {number} noProfessors Total amount of proffesors working at the uni.
+ * @param  {number} noRooms Number of available rooms.
+ * @param  {number} maxClass Maximum number of classes a professor can teach.
+ * @return {TimeTableElement[]}              Professor-Subject mapping. Multiple same elements can occur.
  */
 function initializeUniversity(noProfessors: number, noRooms: number, maxClass: number): TimeTableElement[] {
   const result: TimeTableElement[] = []
@@ -52,11 +56,15 @@ function initializeUniversity(noProfessors: number, noRooms: number, maxClass: n
   return result
 }
 
-/*
- * For a univeristy, return 3D matrix of time table elements.
+/**
+ * Return a 3D matrix of time table elements representing an initial state schedule.
+ *
  * First dimension is day-indexed.
  * Second dimension is term-indexed.
  * Third dimension is room-indexed.
+ * @param  {TimeTableElement[]} university Professor-Subject mapping.
+ * @param  {ScheduleOptions} opts Parameters of a problem.
+ * @return {TimeTableElement[]} 3D matrix repsreneting a schedule.
  */
 function initializeState(university: TimeTableElement[], opts: ScheduleOptions): TimeTableElement[][][] {
   const noDays = 5
@@ -89,11 +97,107 @@ function initializeState(university: TimeTableElement[], opts: ScheduleOptions):
   return timeTable
 }
 
+/**
+ * Calculate total cost of a given state.
+ * @param {TimeTableElement[][][]} state State representing a schedule.
+ * @returns {number} Total cost of a state.
+ */
+function stateCost(state: TimeTableElement[][][]): number {
+  const professorCost = perTermConflict(state, 'professor')
+  const subjectCost = perTermConflict(state, 'subject')
+  const maxSubjectsCost = professorFrequencyCost(state)
+  const subjectAtOnceCost = sameDaySubjectCost(state)
+
+  return professorCost + subjectCost + maxSubjectsCost + subjectAtOnceCost
+}
+
+/**
+ * Calculate the cost of conflicts on a specific item.
+ * This is usually done on a hard constraint, so the initial weight is pretty big.
+ * @param  {TimeTableElement[][][]} state Current schedule state for which the cost is being calculated.
+ * @param  {number = 10} weight Multiplier for the calculated cost.
+ * @return {number} The cost of this state.
+ */
+function perTermConflict(state: TimeTableElement[][][],
+                         conflictingItem: keyof TimeTableElement,
+                         weight: number = 10): number {
+  let cost = 0
+
+  state.forEach(day => {
+    day.forEach(term => {
+      const filtered = term.filter(t => t != undefined)
+      const uniqArr = uniqBy(filtered, conflictingItem)
+      cost += filtered.length - uniqArr.length
+    })
+  })
+
+  return weight * cost
+}
+
+/**
+ * For each professor, find total number of his occurance per day and return the cost based on that.
+ * @param  {TimeTableElement[][][]} state [description]
+ * @param  {number              =     1}           weight [description]
+ * @return {number}                       [description]
+ */
+function professorFrequencyCost(state: TimeTableElement[][][], weight: number = 1): number {
+  let cost = 0
+  state.forEach(day => {
+    const perProfessorCost: any = {}
+
+    day.forEach(term => {
+      term.forEach(t => {
+        if (t != undefined) {
+          if (perProfessorCost[t.professor] == undefined) {
+            perProfessorCost[t.professor] = 1
+          } else {
+            perProfessorCost[t.professor]++
+          }
+        }
+      })
+    })
+
+    for (const professorCost in perProfessorCost) {
+      if (perProfessorCost[professorCost] > 4) {
+        cost++
+      }
+    }
+  })
+  return weight * cost
+}
+
+function sameDaySubjectCost(state: TimeTableElement[][][], weight: number = 1): number {
+  let cost = 0
+  const perDayCost: any = {}
+
+  state.forEach((day, i) => {
+    day.forEach(term => {
+      term.forEach(t => {
+        if (t != undefined) {
+          if (perDayCost[t.subject] == undefined) {
+            perDayCost[t.subject] = [i]
+          } else if (perDayCost[t.subject].indexOf(i) == -1) {
+            perDayCost[t.subject].push(i)
+          }
+        }
+      })
+    })
+  })
+
+  for (const c in perDayCost) {
+    if (perDayCost[c].length > 1) {
+      cost++
+    }
+  }
+
+  return cost
+}
+
 const uni = initializeUniversity(totalProfessors, totalRooms, maxPotentialClasses)
-console.log(uni.length)
 uni.forEach(element => console.log(`${element.professor} is teaching ${element.subject}`))
 
 const initState = initializeState(uni, { noRooms: totalRooms, noTerms: 6 })
+
 console.log('---')
 initState.forEach((day, i) => {
   console.log(`Day ${i}`)
@@ -104,3 +208,5 @@ initState.forEach((day, i) => {
     })
   })
 })
+
+console.log('The cost of whole state is:', stateCost(initState))

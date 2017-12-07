@@ -4,5 +4,9 @@
   "description": "First homework for IntSys course.",
   "main": "index.js",
   "author": "Mihajlo Ilijic",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@types/lodash.uniqby": "^4.7.3",
+    "lodash.uniqby": "^4.7.0"
+  }
 }
