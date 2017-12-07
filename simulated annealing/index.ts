@@ -98,6 +98,56 @@ function initializeState(university: TimeTableElement[], opts: ScheduleOptions):
 }
 
 /**
+ * Generate neighboring state.
+ * @param  {TimeTableElement[][][]} state State for which random neighbor is generated.
+ * @param  {ScheduleOptions} opts Problem's options.
+ * @return {TimeTableElement[][][]} Random neighboring state.
+ */
+function neighbor(state: TimeTableElement[][][], opts: ScheduleOptions): TimeTableElement[][][] {
+  const noDays = 5
+  const noTerms = opts.noTerms
+  const noRooms = opts.noRooms
+
+  const day1 = Math.floor(Math.random() * 10) % noDays
+  const day2 = Math.floor(Math.random() * 10) % noDays
+
+  const term1 = Math.floor(Math.random() * 10) % noTerms
+  const term2 = Math.floor(Math.random() * 10) % noTerms
+
+  const room1 = Math.floor(Math.random() * 10) % noRooms
+  const room2 = Math.floor(Math.random() * 10) % noRooms
+
+  console.log('days', day1, day2)
+  console.log('terms', term1, term2)
+  console.log('rooms', room1, room2)
+  console.log('to', state[day1][term1][room1])
+  console.log('to', state[day2][term2][room2])
+
+  const newTimeTable: TimeTableElement[][][] = []
+
+  for (let i = 0; i < noDays; i++) {
+    newTimeTable.push([])
+    for (let j = 0; j < noTerms; j++) {
+      newTimeTable[i].push(new Array(noRooms))
+      for (let k = 0; k < noRooms; k++) {
+        if (state[i][j][k] != undefined) { // copy if element is not undefined
+          newTimeTable[i][j][k] = state[i][j][k]
+        }
+      }
+    }
+  }
+
+  if (state[day1][term1][room1] != undefined) {
+    newTimeTable[day2][term2][room2] = state[day1][term1][room1]
+  }
+  if (state[day2][term2][room2] != undefined) {
+    newTimeTable[day1][term1][room1] = state[day2][term2][room2]
+  }
+
+  return newTimeTable
+}
+
+/**
  * Calculate total cost of a given state.
  * @param {TimeTableElement[][][]} state State representing a schedule.
  * @returns {number} Total cost of a state.
@@ -203,7 +253,6 @@ const uni = initializeUniversity(totalProfessors, totalRooms, maxPotentialClasse
 uni.forEach(element => console.log(`${element.professor} is teaching ${element.subject}`))
 
 const initState = initializeState(uni, { noRooms: totalRooms, noTerms: 6 })
-
 console.log('---')
 initState.forEach((day, i) => {
   console.log(`Day ${i}`)
@@ -216,3 +265,18 @@ initState.forEach((day, i) => {
 })
 
 console.log('The cost of whole state is:', stateCost(initState))
+
+const nextState = neighbor(initState, { noRooms: totalRooms, noTerms: 6 })
+
+console.log('---')
+nextState.forEach((day, i) => {
+  console.log(`Day ${i}`)
+  day.forEach((term, j) => {
+    console.log(`  Term ${j}`)
+    term.forEach((room, k) => {
+      console.log(`   * ${room.professor} @ room #${k} - class ${room.subject}`)
+    })
+  })
+})
+
+console.log('The cost of whole state is:', stateCost(nextState))
