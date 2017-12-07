@@ -244,38 +244,30 @@ function sameDaySubjectCost(state: TimeTableElement[][][], weight: number = 1): 
   return cost
 }
 
+/**
+ * Pretty print the given state.
+ * @param {TimeTableElement[][][]} state State to pretty print.
+ */
+function printState(state: TimeTableElement[][][]): void {
+  console.log('---')
+  state.forEach((day, i) => {
+  console.log(`Day ${i}`)
+  day.forEach((term, j) => {
+      console.log(`  Term ${j}`)
+      term.forEach((room, k) => {
+        if (room != undefined) {
+          console.log(`   * ${room.professor} @ room #${k} - class ${room.subject}`)
+        }
+      })
+    })
+  })
+
+  console.log('The cost of whole state is:', stateCost(state))
+}
+
 const uni = initializeUniversity(totalProfessors, totalRooms, maxPotentialClasses)
 uni.forEach(element => console.log(`${element.professor} is teaching ${element.subject}`))
 
 const initState = initializeState(uni, { noRooms: totalRooms, noTerms: 6 })
-console.log('---')
-initState.forEach((day, i) => {
-  console.log(`Day ${i}`)
-  day.forEach((term, j) => {
-    console.log(`  Term ${j}`)
-    term.forEach((room, k) => {
-      if (room != undefined) {
-        console.log(`   * ${room.professor} @ room #${k} - class ${room.subject}`)
-      }
-    })
-  })
-})
-
-console.log('The cost of whole state is:', stateCost(initState))
-
 const nextState = neighbor(initState, { noRooms: totalRooms, noTerms: 6 })
 
-console.log('---')
-nextState.forEach((day, i) => {
-  console.log(`Day ${i}`)
-  day.forEach((term, j) => {
-    console.log(`  Term ${j}`)
-    term.forEach((room, k) => {
-      if (room != undefined) {
-        console.log(`   * ${room.professor} @ room #${k} - class ${room.subject}`)
-      }
-    })
-  })
-})
-
-console.log('The cost of whole state is:', stateCost(nextState))
