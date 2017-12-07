@@ -8,5 +8,8 @@
   "dependencies": {
     "@types/lodash.uniqby": "^4.7.3",
     "lodash.uniqby": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^8.0.57"
   }
 }
