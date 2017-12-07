@@ -136,9 +136,9 @@ function perTermConflict(state: TimeTableElement[][][],
 
 /**
  * For each professor, find total number of his occurance per day and return the cost based on that.
- * @param  {TimeTableElement[][][]} state [description]
- * @param  {number              =     1}           weight [description]
- * @return {number}                       [description]
+ * @param  {TimeTableElement[][][]} state Current schedule state.
+ * @param  {number = 1} weight Multiplier for the calculated cost.
+ * @return {number} The cost of this state.
  */
 function professorFrequencyCost(state: TimeTableElement[][][], weight: number = 1): number {
   let cost = 0
@@ -166,6 +166,12 @@ function professorFrequencyCost(state: TimeTableElement[][][], weight: number = 
   return weight * cost
 }
 
+/**
+ * Find the days when the subject is thought and caluclate the cost based on that info.
+ * @param  {TimeTableElement[][][]} state Current schedule state.
+ * @param  {number = 1} weight Multiplier for the calculated cost.
+ * @return {number} The cost of this state.
+ */
 function sameDaySubjectCost(state: TimeTableElement[][][], weight: number = 1): number {
   let cost = 0
   const perDayCost: any = {}
