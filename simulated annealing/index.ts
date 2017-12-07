@@ -1,4 +1,11 @@
 import uniqBy = require('lodash.uniqby')
+import fs = require('fs')
+import path = require('path')
+
+interface ProblemDefinition {
+  noProfessors: number,
+  noRooms: number
+}
 
 interface TimeTableElement {
   professor: string,
@@ -16,7 +23,7 @@ const maxPotentialClasses = 4
 
 /**
  * Initialize all elements for a university.
- * @param  {number} noProfessors Total amount of proffesors working at the uni.
+ * @param  {number} noProfessors Total amount of professors working at the uni.
  * @param  {number} noRooms Number of available rooms.
  * @param  {number} maxClass Maximum number of classes a professor can teach.
  * @return {TimeTableElement[]}              Professor-Subject mapping. Multiple same elements can occur.
@@ -64,7 +71,7 @@ function initializeUniversity(noProfessors: number, noRooms: number, maxClass: n
  * Third dimension is room-indexed.
  * @param  {TimeTableElement[]} university Professor-Subject mapping.
  * @param  {ScheduleOptions} opts Parameters of a problem.
- * @return {TimeTableElement[]} 3D matrix repsreneting a schedule.
+ * @return {TimeTableElement[]} 3D matrix representing a schedule.
  */
 function initializeState(university: TimeTableElement[], opts: ScheduleOptions): TimeTableElement[][][] {
   const noDays = 5
@@ -132,7 +139,7 @@ function neighbor(state: TimeTableElement[][][], opts: ScheduleOptions): TimeTab
     for (let j = 0; j < noTerms; j++) {
       newTimeTable[i].push(new Array(noRooms))
       for (let k = 0; k < noRooms; k++) {
-          newTimeTable[i][j][k] = state[i][j][k]
+        newTimeTable[i][j][k] = state[i][j][k]
       }
     }
   }
@@ -244,30 +251,120 @@ function sameDaySubjectCost(state: TimeTableElement[][][], weight: number = 1): 
   return cost
 }
 
+function printCell(cell: TimeTableElement[]): string {
+  return '<td><pre>' + cell.map((item, indexItem) => item && `${item.subject} (${item.professor} @${indexItem + 1})`).filter(x => !!x).join('\n') + '</pre></td>'
+}
+
+function printRow(termDayState: TimeTableElement[][]): string {
+  return '<tr>' + termDayState.map(printCell).join('\n') + '</tr>'
+}
+
 /**
  * Pretty print the given state.
  * @param {TimeTableElement[][][]} state State to pretty print.
  */
 function printState(state: TimeTableElement[][][]): void {
-  console.log('---')
-  state.forEach((day, i) => {
-  console.log(`Day ${i}`)
-  day.forEach((term, j) => {
-      console.log(`  Term ${j}`)
-      term.forEach((room, k) => {
-        if (room != undefined) {
-          console.log(`   * ${room.professor} @ room #${k} - class ${room.subject}`)
-        }
-      })
-    })
-  })
+  const transpose = (m: any[][]) => m[0].map((x, i) => m.map(x => x[i]))
+
+
+  let html = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+  <style>
+  td { border: 1px solid black; vertical-align: top; padding: 1em; }
+</style>
+</head>
+<body>
+<table>
+<thead>
+<tr>
+${state.map((day, dayIndex) => `<th>${dayIndex + 1}</th>`).join('')}
+</tr>
+</thead>
+<tbody>
+${transpose(state).map(printRow).join('')}
+</tbody>
+</table>    
+</body>  
+  </html>
+  `
+
+
+  fs.writeFile(path.join(__dirname, 'out.html'), html, function(err) {
+    if(err) {
+      return console.log(err);
+    }
+
+    console.log("The file was saved!");
+  });
+
+  // console.log('---')
+  //
+  // let mat: any[][] = []
+  // let maxHeight = 0
+  // let maxWidth = 0
+  //
+  // for (let i = 0; i < 5; i++) {
+  //   mat.push([])
+  //   for (let j = 0; j < 6; j++) {
+  //     mat.push(state[i][j])
+  //   }
+  // }
+  //
+  // for (let i = 0; i < 6; i++) {
+  //   for (let j = 0; j < 5; j++) {
+  //   }
+  // }
+  //
+  // state.forEach((day, i) => {
+  // console.log(`Day ${i}`)
+  // day.forEach((term, j) => {
+  //     console.log(`  Term ${j}`)
+  //     term.forEach((room, k) => {
+  //       if (room != undefined) {
+  //         console.log(`   * ${room.professor} @ room #${k} - class ${room.subject}`)
+  //       }
+  //     })
+  //   })
+  // })
+
+  console.log(html)
 
   console.log('The cost of whole state is:', stateCost(state))
+}
+
+
+function simulatedAnnealing(initialState: TimeTableElement[][][]) {
+  const alpha = 0.9
+  const tMin = 1e-3
+  let oldCost = stateCost(initialState)
+  let t = 1.0
+  while (t > tMin) {
+    let i = 1
+    while (i <= 500) {
+      const newSolution = neighbor(initialState, {noRooms: totalRooms, noTerms: 6})
+      const newCost = stateCost(newSolution)
+      const delta = newCost - oldCost
+
+      if (delta < 0 || Math.exp(-delta / t) > Math.random()) {
+        initialState = newSolution
+        oldCost = newCost
+      }
+      i++
+    }
+    t *= alpha
+  }
+  return initialState
 }
 
 const uni = initializeUniversity(totalProfessors, totalRooms, maxPotentialClasses)
 uni.forEach(element => console.log(`${element.professor} is teaching ${element.subject}`))
 
-const initState = initializeState(uni, { noRooms: totalRooms, noTerms: 6 })
-const nextState = neighbor(initState, { noRooms: totalRooms, noTerms: 6 })
+const initState = initializeState(uni, {noRooms: totalRooms, noTerms: 6})
+console.log('init')
+// printState(initState)
+const finalState = simulatedAnnealing(initState)
+printState(finalState)
+
 
