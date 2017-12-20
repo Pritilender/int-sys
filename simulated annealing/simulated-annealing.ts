@@ -252,7 +252,7 @@ function sameDaySubjectCost(state: TimeTableElement[][][], weight: number = 1): 
  * @param {number} alpha Temperature lowering factor. Should be as small as possible for a better solution.
  */
 export function simulatedAnnealing(university: TimeTableElement[], problemInfo: ProblemDefinition, alpha: number) {
-  const tMin = 1e-16
+  const tMin = 1e-3
   let oldState = initializeState(university, {noRooms: problemInfo.noRooms, noTerms: 6})
   const htmlStringInit = getHtmlString(oldState)
 
