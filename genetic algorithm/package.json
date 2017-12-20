@@ -1,0 +1,13 @@
+{
+  "name": "genetic-algorithm",
+  "version": "0.0.1",
+  "description": "Second homework for IntSys course.",
+  "main": "index.js",
+  "author": "Mihajlo Ilijic",
+  "license": "MIT",
+  "dependencies": {
+    "@types/lodash.shuffle": "^4.2.3",
+    "lodash.shuffle": "^4.2.0"
+  },
+  "devDependencies": {}
+}
