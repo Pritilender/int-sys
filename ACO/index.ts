@@ -12,6 +12,10 @@ function shuffledArray(length: number): number[] {
   return _.shuffle(Array.apply(null, {length}).map(Function.call, Number))
 }
 
+function rescaleNumber(x: number, maxOld: number, maxNew: number): number {
+  return x * maxNew / maxOld
+}
+
 class Painter {
   private canvas: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D | null
@@ -27,7 +31,6 @@ class Painter {
 
   public drawCities() {
     if (this.ctx != null) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
       this.ctx.font = '18px Lucida Console'
       this.world.cities.forEach((city, i) => {
         if (this.ctx != null) {
@@ -36,6 +39,46 @@ class Painter {
         }
       })
     }
+  }
+
+  public connectCities() {
+    if (this.ctx != null) {
+      const maxPheromone = this.findMaxPheromone()
+      for (let i = 0; i < this.world.infoMatrix.length; i++) {
+        for (let j = 0; j < this.world.infoMatrix.length; j++) {
+          if (i != j) {
+            const pheromoneLevel = 255 - Math.floor(rescaleNumber(this.world.infoMatrix[i][j].pheromone, maxPheromone, 255))
+            if (pheromoneLevel < 200) {
+              this.ctx.strokeStyle = `rgb(220, ${pheromoneLevel}, ${pheromoneLevel})`
+              this.ctx.lineWidth = Math.floor(rescaleNumber(this.world.infoMatrix[i][j].pheromone, maxPheromone, 5))
+              this.ctx.beginPath()
+              this.ctx.moveTo(this.world.cities[i].x + 2.5, this.world.cities[i].y + 2.5)
+              this.ctx.lineTo(this.world.cities[j].x + 2.5, this.world.cities[j].y + 2.5)
+              this.ctx.stroke()
+              this.ctx.closePath()
+            }
+          }
+        }
+      }
+    }
+  }
+
+  public redraw() {
+    if (this.ctx != null) {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+      this.connectCities()
+      this.drawCities()
+    }
+  }
+
+  private findMaxPheromone(): number {
+    let max = 0
+    for (let i = 0; i < this.world.infoMatrix.length; i++) {
+      for (let j = 0; j < this.world.infoMatrix.length; j++) {
+        max = this.world.infoMatrix[i][j].pheromone > max ? this.world.infoMatrix[i][j].pheromone : max
+      }
+    }
+    return max
   }
 }
 
@@ -48,12 +91,12 @@ class Solution {
     this.connectionMatrix = connectionMatrix
     this.order = order || this.newSolution(3)
     this.distance = this.totalDistance()
-    console.log('order here', this.order, order, this.distance)
+    // console.log('order here', this.order, order, this.distance)
   }
 
   public newSolution(beta: number): number[] {
     const cities = this.connectionMatrix.length
-    const alpha: number = 1
+    const alpha: number = 2
     const solution: number[] = []
     let current = Math.floor((Math.random() * 1000) % this.connectionMatrix.length)
     solution.push(current)
@@ -161,7 +204,8 @@ class World {
   }
 
   public search(beta: number) {
-    for (let i = 0; i < 100; i++) {
+    let i = 0
+    const singleIteration = () => {
       const candidates: Solution[] = []
       for (let j = 0; j < this.cities.length; j++) {
         const antSolution = new Solution(this.infoMatrix)
@@ -170,13 +214,25 @@ class World {
         }
         candidates.push(antSolution)
       }
-      this.bestSolution.print()
       this.infoMatrix = this.decayPheromones(0.5)
       this.infoMatrix = this.updatePheromones(candidates)
-      // this.printPheromoneMatrix()
+      this.painter.redraw()
+      i++
+
+      if (i == 100 || this.shouldStop(candidates)) {
+        this.bestSolution.print()
+        console.log(i)
+      } else {
+        setTimeout(singleIteration, 60)
+      }
     }
+    singleIteration()
   }
 
+  private shouldStop(candidates: Solution[]): boolean {
+    const count = candidates.filter(x => x.distance == this.bestSolution.distance).length
+    return (count / this.cities.length) >= 0.5
+  }
 
   private decayPheromones(factor: number): ConnectionInfo[][] {
     return this.infoMatrix.map(row => row.map(info => ({
@@ -212,7 +268,6 @@ class World {
   }
 }
 
-
 console.log('World constructing')
-const world = new World(10, 10, window.innerWidth - 100, window.innerHeight - 100)
+const world = new World(50, 100, window.innerWidth - 100, window.innerHeight - 100)
 world.search(3)
