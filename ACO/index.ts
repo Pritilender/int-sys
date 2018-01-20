@@ -34,6 +34,7 @@ class Painter {
       this.ctx.font = '18px Lucida Console'
       this.world.cities.forEach((city, i) => {
         if (this.ctx != null) {
+          this.ctx.fillStyle = `#FFFFFF`
           this.ctx.fillRect(city.x, city.y, 5, 5)
           this.ctx.fillText(i.toString(), city.x + 5, city.y)
         }
@@ -48,8 +49,8 @@ class Painter {
         for (let j = 0; j < this.world.infoMatrix.length; j++) {
           if (i != j) {
             const pheromoneLevel = 255 - Math.floor(rescaleNumber(this.world.infoMatrix[i][j].pheromone, maxPheromone, 255))
-            if (pheromoneLevel < 200) {
-              this.ctx.strokeStyle = `rgb(220, ${pheromoneLevel}, ${pheromoneLevel})`
+            if (pheromoneLevel < 255) {
+              this.ctx.strokeStyle = `rgb(255, ${pheromoneLevel}, ${pheromoneLevel})`
               this.ctx.lineWidth = Math.floor(rescaleNumber(this.world.infoMatrix[i][j].pheromone, maxPheromone, 5))
               this.ctx.beginPath()
               this.ctx.moveTo(this.world.cities[i].x + 2.5, this.world.cities[i].y + 2.5)
@@ -65,7 +66,8 @@ class Painter {
 
   public redraw() {
     if (this.ctx != null) {
-      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+      this.ctx.fillStyle = `#000000`
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
       this.connectCities()
       this.drawCities()
     }

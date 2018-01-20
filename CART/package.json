@@ -1,0 +1,10 @@
+{
+  "name": "CART",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "ml-cart": "^1.0.8",
+    "ml-dataset-iris": "^1.0.0"
+  }
+}
