@@ -47,17 +47,15 @@ class Painter {
       const maxPheromone = this.findMaxPheromone()
       for (let i = 0; i < this.world.infoMatrix.length; i++) {
         for (let j = 0; j < this.world.infoMatrix.length; j++) {
-          if (i != j) {
+          if (i != j && this.world.infoMatrix[i][j].pheromone > 0.001) {
             const pheromoneLevel = 255 - Math.floor(rescaleNumber(this.world.infoMatrix[i][j].pheromone, maxPheromone, 255))
-            if (pheromoneLevel < 255) {
-              this.ctx.strokeStyle = `rgb(255, ${pheromoneLevel}, ${pheromoneLevel})`
-              this.ctx.lineWidth = Math.floor(rescaleNumber(this.world.infoMatrix[i][j].pheromone, maxPheromone, 5))
-              this.ctx.beginPath()
-              this.ctx.moveTo(this.world.cities[i].x + 2.5, this.world.cities[i].y + 2.5)
-              this.ctx.lineTo(this.world.cities[j].x + 2.5, this.world.cities[j].y + 2.5)
-              this.ctx.stroke()
-              this.ctx.closePath()
-            }
+            this.ctx.strokeStyle = `rgb(255, ${pheromoneLevel}, ${pheromoneLevel})`
+            // this.ctx.lineWidth = Math.floor(rescaleNumber(this.world.infoMatrix[i][j].pheromone, maxPheromone, 5))
+            this.ctx.beginPath()
+            this.ctx.moveTo(this.world.cities[i].x + 2.5, this.world.cities[i].y + 2.5)
+            this.ctx.lineTo(this.world.cities[j].x + 2.5, this.world.cities[j].y + 2.5)
+            this.ctx.stroke()
+            this.ctx.closePath()
           }
         }
       }
@@ -216,9 +214,9 @@ class World {
         }
         candidates.push(antSolution)
       }
+      this.painter.redraw()
       this.infoMatrix = this.decayPheromones(0.5)
       this.infoMatrix = this.updatePheromones(candidates)
-      this.painter.redraw()
       i++
 
       if (i == 100 || this.shouldStop(candidates)) {
